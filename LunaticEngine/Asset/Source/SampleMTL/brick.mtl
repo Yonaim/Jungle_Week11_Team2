@@ -1,0 +1,7 @@
+newmtl M_Brick
+Kd 1.000 1.000 1.000
+Ks 1.000 1.000 1.000
+Ns 64.000
+map_Kd brick_diff-512.png
+map_Ks brick_spec-512.png
+bump brick_nor-512.png
