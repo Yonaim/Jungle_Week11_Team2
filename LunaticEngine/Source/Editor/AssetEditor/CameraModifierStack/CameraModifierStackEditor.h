@@ -1,10 +1,12 @@
 #pragma once
 
 #include "AssetEditor/IAssetEditor.h"
+#include "Common/UI/Panels/Panel.h"
 #include "Core/CoreTypes.h"
 
 #include <filesystem>
 #include <functional>
+#include <string>
 
 class UAssetData;
 class UObject;
@@ -24,6 +26,12 @@ class FCameraModifierStackEditor final : public IAssetEditor
 
     void RenderContent(float DeltaTime) override;
 
+    bool UsesExternalPanels() const override { return true; }
+    void InvalidateDockLayout() override;
+    void OnActivated() override;
+    void OnDeactivated() override;
+    void RenderPanels(float DeltaTime, ImGuiID DockspaceId) override;
+
     bool IsDirty() const override { return bDirty; }
     bool IsCapturingInput() const override { return bCapturingInput; }
     const char *GetEditorName() const override { return "CameraModifierStackEditor"; }
@@ -33,9 +41,15 @@ class FCameraModifierStackEditor final : public IAssetEditor
     bool HasOpenAsset() const { return EditingAsset != nullptr; }
 
   private:
+    void BuildDefaultDockLayout(ImGuiID DockspaceId);
+    void RenderPanelsInternal(float DeltaTime, ImGuiID DockspaceId);
+    void RenderContentsPanel(const FPanelDesc &Desc);
+    void RenderDetailsPanel(const FPanelDesc &Desc);
+    std::string MakePanelStableId(const char *PanelName) const;
+    FPanelDesc MakePanelDesc(const char *DisplayName, const char *StableName, const char *IconKey,
+                             ImGuiWindowFlags Flags = ImGuiWindowFlags_NoCollapse) const;
+
     void DrawToolbar();
-    void DrawAssetContents();
-    void DrawDetails();
     bool DrawLabeledField(const char *Label, const std::function<bool()> &DrawField);
     bool DrawCurveControlPointRow(const char *Label, float &XValue, float &YValue);
     bool DrawCurveEditor(const char *Label, FAssetBezierCurve &Curve);
@@ -56,4 +70,12 @@ class FCameraModifierStackEditor final : public IAssetEditor
     bool                  bOpen = false;
     bool                  bDirty = false;
     bool                  bCapturingInput = false;
+
+    // 동일 타입 에디터를 여러 개 열었을 때 ImGui ID 충돌을 피하기 위한 인스턴스 ID.
+    uint32 EditorInstanceId = 0;
+    ImGuiID BuiltDockspaceId = 0;
+
+    bool bContentsPanelOpen = true;
+    bool bDetailsPanelOpen = true;
+    bool bIsActiveTab = false;
 };

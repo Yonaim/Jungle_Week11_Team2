@@ -47,9 +47,6 @@ struct FDockPanelLayoutState
     bool bRequestDefaultLayout = true;
     bool bRestoreCapturedLayoutNextFrame = false;
     bool bApplyingRestore = false;
-    // Set for one frame after DockBuilder runs, so FPanel::Begin does not override
-    // DockBuilder's per-sub-node window assignments with the root DockSpace ID.
-    bool bDockBuilderLayoutActive = false;
     int32 RestoreCapturedLayoutFramesRemaining = 0;
     std::unordered_map<std::string, ImGuiID> PanelDockIds;
 };
@@ -225,19 +222,10 @@ class FPanel
 
         if (!bAppliedCapturedDock)
         {
-            // When DockBuilder has just split the DockSpace and assigned windows to
-            // sub-nodes via DockBuilderDockWindow, do NOT call SetNextWindowDockID with
-            // the root DockSpace ID. On new (DockId == 0) windows ImGuiCond_FirstUseEver
-            // would apply and dock the window to the root, silently overriding the
-            // DockBuilder sub-node assignment. Let DockBuilder be authoritative instead.
-            const bool bSkipFallback = LayoutState && LayoutState->bDockBuilderLayoutActive;
-            if (!bSkipFallback)
+            const ImGuiID TargetDockspaceId = Desc.DockspaceId != 0 ? Desc.DockspaceId : GetCurrentDockspaceIdStorage();
+            if (TargetDockspaceId != 0)
             {
-                const ImGuiID TargetDockspaceId = Desc.DockspaceId != 0 ? Desc.DockspaceId : GetCurrentDockspaceIdStorage();
-                if (TargetDockspaceId != 0)
-                {
-                    ImGui::SetNextWindowDockID(TargetDockspaceId, Desc.DockCond);
-                }
+                ImGui::SetNextWindowDockID(TargetDockspaceId, Desc.DockCond);
             }
         }
 

@@ -3,6 +3,7 @@
 
 #include "AssetEditor/Common/UI/BezierCurveEditor.h"
 #include "Common/File/EditorFileUtils.h"
+#include "Common/UI/Docking/DockLayoutUtils.h"
 #include "Core/Notification.h"
 #include "EditorEngine.h"
 #include "Engine/Asset/AssetData.h"
@@ -15,12 +16,16 @@
 #include "ImGui/imgui_internal.h"
 
 #include <algorithm>
+#include <atomic>
 #include <cstring>
 #include <filesystem>
 #include <functional>
+#include <string>
 
 namespace
 {
+    std::atomic<uint32> GNextCameraModifierStackEditorId{1};
+
     constexpr ImVec4 AssetEditorBlue = ImVec4(0.20f, 0.48f, 0.90f, 1.0f);
     constexpr ImVec4 AssetEditorBlueHover = ImVec4(0.26f, 0.58f, 0.98f, 1.0f);
     constexpr ImVec4 AssetEditorBlueActive = ImVec4(0.14f, 0.39f, 0.80f, 1.0f);
@@ -169,6 +174,11 @@ void FCameraModifierStackEditor::Initialize(UEditorEngine *InEditorEngine, FRend
 {
     EditorEngine = InEditorEngine;
     Renderer = InRenderer;
+
+    if (EditorInstanceId == 0)
+    {
+        EditorInstanceId = GNextCameraModifierStackEditorId.fetch_add(1);
+    }
 }
 
 bool FCameraModifierStackEditor::OpenAsset(UObject *Asset, const std::filesystem::path &AssetPath)
@@ -185,6 +195,10 @@ bool FCameraModifierStackEditor::OpenAsset(UObject *Asset, const std::filesystem
     SelectedEditorId = 0;
     bOpen = true;
     bDirty = false;
+
+    BuiltDockspaceId = 0;
+    bContentsPanelOpen = true;
+    bDetailsPanelOpen = true;
 
     LoadedAsset->EnsureValidEditorIds();
     if (!LoadedAsset->CameraShakes.empty())
@@ -208,6 +222,12 @@ void FCameraModifierStackEditor::Close()
     SelectedEditorId = 0;
     bOpen = false;
     bDirty = false;
+
+    BuiltDockspaceId = 0;
+    bContentsPanelOpen = true;
+    bDetailsPanelOpen = true;
+    bIsActiveTab = false;
+    bCapturingInput = false;
 }
 
 bool FCameraModifierStackEditor::Save()
@@ -276,12 +296,96 @@ bool FCameraModifierStackEditor::PromptForSavePath(void *OwnerWindowHandle)
 
 void FCameraModifierStackEditor::RenderContent(float DeltaTime)
 {
-    (void)DeltaTime;
+    RenderPanels(DeltaTime, 0);
+}
+
+void FCameraModifierStackEditor::InvalidateDockLayout()
+{
+    bContentsPanelOpen = true;
+    bDetailsPanelOpen = true;
+    BuiltDockspaceId = 0;
+}
+
+void FCameraModifierStackEditor::OnActivated()
+{
+    bIsActiveTab = true;
+    bCapturingInput = false;
+}
+
+void FCameraModifierStackEditor::OnDeactivated()
+{
+    bIsActiveTab = false;
+    bCapturingInput = false;
+}
+
+void FCameraModifierStackEditor::RenderPanels(float DeltaTime, ImGuiID DockspaceId)
+{
     if (!bOpen)
     {
         bCapturingInput = false;
         return;
     }
+
+    if (DockspaceId != 0 && BuiltDockspaceId != DockspaceId)
+    {
+        BuildDefaultDockLayout(DockspaceId);
+        BuiltDockspaceId = DockspaceId;
+    }
+
+    RenderPanelsInternal(DeltaTime, DockspaceId);
+}
+
+std::string FCameraModifierStackEditor::MakePanelStableId(const char *PanelName) const
+{
+    return std::string("CameraModifierStackEditor_") + std::to_string(EditorInstanceId) + "_" + PanelName;
+}
+
+FPanelDesc FCameraModifierStackEditor::MakePanelDesc(const char *DisplayName, const char *StableName,
+                                                     const char *IconKey, ImGuiWindowFlags Flags) const
+{
+    FPanelDesc Desc;
+    Desc.DisplayName = DisplayName;
+    Desc.IconKey = IconKey;
+    Desc.WindowFlags = Flags;
+    Desc.bClosable = true;
+    Desc.bApplyContentTopInset = true;
+    Desc.bApplySideInset = true;
+    Desc.bApplyBottomInset = true;
+
+    (void)StableName;
+    return Desc;
+}
+
+void FCameraModifierStackEditor::BuildDefaultDockLayout(ImGuiID DockspaceId)
+{
+    if (DockspaceId == 0)
+    {
+        return;
+    }
+
+    const std::string ContentsId = MakePanelStableId("Contents");
+    const std::string DetailsId = MakePanelStableId("Details");
+
+    FPanelDesc ContentsDesc = MakePanelDesc("Modifier Stack", "Contents", "Editor.Icon.Panel.Asset");
+    ContentsDesc.StableId = ContentsId.c_str();
+    ContentsDesc.bOpen = &bContentsPanelOpen;
+
+    FPanelDesc DetailsDesc = MakePanelDesc("Details", "Details", "Editor.Icon.Panel.Details");
+    DetailsDesc.StableId = DetailsId.c_str();
+    DetailsDesc.bOpen = &bDetailsPanelOpen;
+
+    FTwoPanelDockLayoutDesc LayoutDesc;
+    LayoutDesc.LeftWindow = FPanel::MakeTitle(ContentsDesc);
+    LayoutDesc.RightWindow = FPanel::MakeTitle(DetailsDesc);
+    LayoutDesc.LeftRatio = 0.30f;
+
+    FDockLayoutUtils::DockTwoPanelLayout(DockspaceId, LayoutDesc);
+}
+
+void FCameraModifierStackEditor::RenderPanelsInternal(float DeltaTime, ImGuiID DockspaceId)
+{
+    (void)DeltaTime;
+    (void)DockspaceId;
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 8.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 1.5f);
@@ -299,7 +403,48 @@ void FCameraModifierStackEditor::RenderContent(float DeltaTime)
     ImGui::PushStyleColor(ImGuiCol_SeparatorActive, AssetEditorBlueActive);
     ImGui::PushStyleColor(ImGuiCol_PlotLines, AssetEditorBlueHover);
     ImGui::PushStyleColor(ImGuiCol_Border, AssetEditorBorder);
-    bCapturingInput = IsCurrentAssetEditorCapturingInput();
+
+    const std::string ContentsId = MakePanelStableId("Contents");
+    const std::string DetailsId = MakePanelStableId("Details");
+
+    FPanelDesc ContentsDesc = MakePanelDesc("Modifier Stack", "Contents", "Editor.Icon.Panel.Asset");
+    ContentsDesc.StableId = ContentsId.c_str();
+    ContentsDesc.bOpen = &bContentsPanelOpen;
+
+    FPanelDesc DetailsDesc = MakePanelDesc("Details", "Details", "Editor.Icon.Panel.Details");
+    DetailsDesc.StableId = DetailsId.c_str();
+    DetailsDesc.bOpen = &bDetailsPanelOpen;
+
+    bool bAnyCapture = false;
+    if (bContentsPanelOpen)
+    {
+        RenderContentsPanel(ContentsDesc);
+        if (IsCurrentAssetEditorCapturingInput())
+        {
+            bAnyCapture = true;
+        }
+    }
+    if (bDetailsPanelOpen)
+    {
+        RenderDetailsPanel(DetailsDesc);
+        if (IsCurrentAssetEditorCapturingInput())
+        {
+            bAnyCapture = true;
+        }
+    }
+    bCapturingInput = bAnyCapture;
+
+    ImGui::PopStyleColor(14);
+    ImGui::PopStyleVar(2);
+}
+
+void FCameraModifierStackEditor::RenderContentsPanel(const FPanelDesc &Desc)
+{
+    if (!FPanel::Begin(Desc))
+    {
+        FPanel::End();
+        return;
+    }
 
     DrawToolbar();
     ImGui::Separator();
@@ -307,27 +452,41 @@ void FCameraModifierStackEditor::RenderContent(float DeltaTime)
     if (!EditingAsset)
     {
         ImGui::TextDisabled("Open a .uasset file from File > Open... or the Content Browser.");
-        ImGui::PopStyleColor(14);
-        ImGui::PopStyleVar(2);
+    }
+    else if (UCameraModifierStackAssetData *StackAsset = Cast<UCameraModifierStackAssetData>(EditingAsset))
+    {
+        DrawCameraModifierStackAssetContents(*StackAsset);
+    }
+    else
+    {
+        ImGui::TextDisabled("Unsupported asset root.");
+    }
+
+    FPanel::End();
+}
+
+void FCameraModifierStackEditor::RenderDetailsPanel(const FPanelDesc &Desc)
+{
+    if (!FPanel::Begin(Desc))
+    {
+        FPanel::End();
         return;
     }
 
-    if (ImGui::BeginTable("AssetEditorLayout", 2, ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV))
+    if (!EditingAsset)
     {
-        ImGui::TableSetupColumn("Asset Contents", ImGuiTableColumnFlags_WidthFixed, 280.0f);
-        ImGui::TableSetupColumn("Details", ImGuiTableColumnFlags_WidthStretch);
-
-        ImGui::TableNextColumn();
-        DrawAssetContents();
-
-        ImGui::TableNextColumn();
-        DrawDetails();
-
-        ImGui::EndTable();
+        ImGui::TextDisabled("No asset is open.");
+    }
+    else if (UCameraModifierStackAssetData *StackAsset = Cast<UCameraModifierStackAssetData>(EditingAsset))
+    {
+        DrawCameraModifierStackAssetDetails(*StackAsset);
+    }
+    else
+    {
+        ImGui::TextDisabled("No Details panel is registered for this asset type.");
     }
 
-    ImGui::PopStyleColor(14);
-    ImGui::PopStyleVar(2);
+    FPanel::End();
 }
 
 void FCameraModifierStackEditor::DrawToolbar()
@@ -346,42 +505,6 @@ void FCameraModifierStackEditor::DrawToolbar()
     {
         ImGui::TextDisabled("%s", EditingAsset->GetClass()->GetName());
     }
-}
-
-void FCameraModifierStackEditor::DrawAssetContents()
-{
-    ImGui::BeginChild("Asset Contents", ImVec2(0, 0), true);
-    ImGui::TextUnformatted("Asset Contents");
-    ImGui::Separator();
-
-    if (UCameraModifierStackAssetData *StackAsset = Cast<UCameraModifierStackAssetData>(EditingAsset))
-    {
-        DrawCameraModifierStackAssetContents(*StackAsset);
-    }
-    else
-    {
-        ImGui::TextDisabled("Unsupported asset root.");
-    }
-
-    ImGui::EndChild();
-}
-
-void FCameraModifierStackEditor::DrawDetails()
-{
-    ImGui::BeginChild("Details", ImVec2(0, 0), true);
-    ImGui::TextUnformatted("Details");
-    ImGui::Separator();
-
-    if (UCameraModifierStackAssetData *StackAsset = Cast<UCameraModifierStackAssetData>(EditingAsset))
-    {
-        DrawCameraModifierStackAssetDetails(*StackAsset);
-    }
-    else
-    {
-        ImGui::TextDisabled("No Details panel is registered for this asset type.");
-    }
-
-    ImGui::EndChild();
 }
 
 bool FCameraModifierStackEditor::DrawLabeledField(const char *Label, const std::function<bool()> &DrawField)

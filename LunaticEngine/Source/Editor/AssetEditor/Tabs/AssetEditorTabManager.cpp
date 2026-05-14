@@ -493,7 +493,9 @@ void FAssetEditorTabManager::RenderActiveTab(float DeltaTime, ImGuiID DockspaceI
     }
 
     bool bOpen = true;
-    const std::string StableId = std::string("AssetEditorTab_") + std::to_string(ActiveTabIndex);
+    // StableId는 LayoutId 기반의 SetCurrentStableIdPrefix(line 479)와 결합되어 탭별 고유 식별자를 만든다.
+    // ActiveTabIndex를 사용하면 탭 추가/삭제/재정렬 시 동일 ID가 다른 탭에 재사용되어 ImGui 도킹 트리가 일관성을 잃을 수 있음.
+    const std::string StableId = "AssetEditorTabContent";
     const std::string TabTitle = Tab->GetTitle();
     FPanelDesc PanelDesc;
     PanelDesc.DisplayName = TabTitle.c_str();

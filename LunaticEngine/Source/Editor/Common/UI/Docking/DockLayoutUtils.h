@@ -14,6 +14,14 @@
  * - 이렇게 해야 FBX를 열었을 때 Preview Viewport가 floating window가 아니라
  *   중앙 dock node에 안정적으로 들어간다.
  */
+struct FTwoPanelDockLayoutDesc
+{
+    std::string LeftWindow;
+    std::string RightWindow;
+
+    float LeftRatio = 0.30f;
+};
+
 struct FFourPanelDockLayoutDesc
 {
     std::string ToolbarWindow;
@@ -84,6 +92,31 @@ class FDockLayoutUtils
         }
 
         ImGui::DockBuilderRemoveNodeChildNodes(DockspaceId);
+    }
+
+    static void DockTwoPanelLayout(ImGuiID DockspaceId, const FTwoPanelDockLayoutDesc &Desc)
+    {
+        if (DockspaceId == 0)
+        {
+            return;
+        }
+
+        ClearDockspaceForAssetEditor(DockspaceId);
+
+        ImGuiID MainId = DockspaceId;
+        ImGuiID LeftId = ImGui::DockBuilderSplitNode(MainId, ImGuiDir_Left, Desc.LeftRatio, nullptr, &MainId);
+        ImGuiID RightId = MainId;
+
+        if (!Desc.LeftWindow.empty())
+        {
+            ImGui::DockBuilderDockWindow(Desc.LeftWindow.c_str(), LeftId);
+        }
+        if (!Desc.RightWindow.empty())
+        {
+            ImGui::DockBuilderDockWindow(Desc.RightWindow.c_str(), RightId);
+        }
+
+        ImGui::DockBuilderFinish(DockspaceId);
     }
 
     static void DockFourPanelLayout(ImGuiID DockspaceId, const FFourPanelDockLayoutDesc &Desc)
