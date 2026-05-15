@@ -195,6 +195,7 @@ void FDrawCommandBuilder::BuildCommandForProxy(const FPrimitiveSceneProxy& Proxy
 			? Section.Material->GetShader()
 			: Proxy.GetShader();
 		FShader* EffectiveShader = SelectEffectiveShader(SectionShader, CollectViewMode);
+		if (!EffectiveShader) continue;
 
 		FDrawCommand& Cmd = DrawCommandList.AddCommand();
 		Cmd.Pass = Pass;

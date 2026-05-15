@@ -184,8 +184,7 @@ void FDrawCommandList::SubmitCommand(const FDrawCommand& Cmd,
 		}
 		if (bForce || Cmd.Buffer.IB != Cache.Buffer.IB)
 		{
-			if (Cmd.Buffer.IB)
-				Ctx->IASetIndexBuffer(Cmd.Buffer.IB, DXGI_FORMAT_R32_UINT, 0);
+			Ctx->IASetIndexBuffer(Cmd.Buffer.IB, DXGI_FORMAT_R32_UINT, 0);
 		}
 		Cache.Buffer = Cmd.Buffer;
 	}
