@@ -300,7 +300,7 @@ void FDirectoryWatcher::WatchThreadFunc()
 						FString NormalizedPath = Entry->PathPrefix + FPaths::ToUtf8(FileName);
 						Entry->PendingChanges.insert(NormalizedPath);
 
-						UE_LOG_CATEGORY(DirectoryWatcher, Debug, "[DirectoryWatcher] Detected: %s", NormalizedPath.c_str());
+						UE_LOG_CATEGORY(DirectoryWatcher, Verbose, "[DirectoryWatcher] Detected: %s", NormalizedPath.c_str());
 
 						if (Info->NextEntryOffset == 0) break;
 						Info = reinterpret_cast<FILE_NOTIFY_INFORMATION*>(
