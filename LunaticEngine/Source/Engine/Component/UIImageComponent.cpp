@@ -11,6 +11,7 @@
 #include "Render/Scene/FScene.h"
 #include "Serialization/Archive.h"
 #include "Texture/Texture2D.h"
+#include "Engine/Platform/Paths.h"
 #include "Viewport/GameViewportClient.h"
 #include "Viewport/Viewport.h"
 
@@ -236,6 +237,10 @@ UUIImageComponent::UUIImageComponent()
 void UUIImageComponent::Serialize(FArchive &Ar)
 {
     UBillboardComponent::Serialize(Ar);
+    if (Ar.IsSaving())
+    {
+        BackgroundTextureSlot.Path = FPaths::NormalizePath(BackgroundTextureSlot.Path);
+    }
     Ar << ScreenPosition;
     Ar << ScreenSize;
     Ar << bUseAnchoredLayout;

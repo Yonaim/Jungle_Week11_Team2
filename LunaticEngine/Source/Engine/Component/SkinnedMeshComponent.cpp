@@ -4,6 +4,7 @@
 #include "Mesh/MeshAssetManager.h"
 #include "Engine/Runtime/Engine.h"
 #include "Serialization/Archive.h"
+#include "Engine/Platform/Paths.h"
 #include <algorithm>
 #include <cmath>
 #include <cctype>
@@ -378,6 +379,10 @@ void USkinnedMeshComponent::PostEditProperty(const char* PropertyName)
 // FArchive 기반 직렬화 — 복제 왕복용. 자산은 경로로만 들고, 실제 로드는 PostDuplicate에서.
 static FArchive& operator<<(FArchive& Ar, FMaterialSlot& Slot)
 {
+	if (Ar.IsSaving())
+	{
+		Slot.Path = FPaths::NormalizePath(Slot.Path);
+	}
 	Ar << Slot.Path;
 	return Ar;
 }
@@ -385,6 +390,10 @@ static FArchive& operator<<(FArchive& Ar, FMaterialSlot& Slot)
 void USkinnedMeshComponent::Serialize(FArchive& Ar)
 {
 	UMeshComponent::Serialize(Ar);
+	if (Ar.IsSaving())
+	{
+		SkeletalMeshPath = FPaths::NormalizePath(SkeletalMeshPath);
+	}
 	Ar << SkeletalMeshPath;
 	Ar << MaterialSlots;
 }

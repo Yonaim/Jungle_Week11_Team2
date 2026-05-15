@@ -7,6 +7,7 @@
 #include "Engine/Runtime/Engine.h"
 #include "Serialization/Archive.h"
 #include "Texture/Texture2D.h"
+#include "Engine/Platform/Paths.h"
 
 IMPLEMENT_CLASS(AItemActorBase, AActor)
 
@@ -102,6 +103,10 @@ void AItemActorBase::Serialize(FArchive& Ar)
 	Ar << InteractionConfig.bStartsEnabled;
 
 	// BeginPlay에서 texture를 다시 적용할 수 있게 경로도 저장.
+	if (Ar.IsSaving())
+	{
+		ItemTexturePath = FPaths::NormalizePath(ItemTexturePath);
+	}
 	Ar << ItemTexturePath;
 }
 

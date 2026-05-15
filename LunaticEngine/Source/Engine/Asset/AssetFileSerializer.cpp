@@ -139,6 +139,17 @@ namespace FAssetFileSerializer
             return false;
         }
 
+        // 동일 자산을 다시 저장할 때 GUID를 재사용해 자산 단위 식별자를 안정화한다.
+        // Writer를 열기 전에 Reader 스코프를 닫아 파일 핸들 충돌을 피한다.
+        FString ReusedGuid;
+        {
+            FAssetFileHeader ExistingHeader;
+            if (ReadAssetHeader(FilePath, ExistingHeader) && !ExistingHeader.AssetGuid.empty())
+            {
+                ReusedGuid = ExistingHeader.AssetGuid;
+            }
+        }
+
         UE_LOG_CATEGORY(AssetFileSerializer, Info, "[AssetSave] Begin: path=%s class=%s", AssetPath.c_str(), RootObject->GetClass()->GetName());
         FWindowsBinWriter Writer(AssetPath);
         if (!Writer.IsValid())
@@ -154,7 +165,7 @@ namespace FAssetFileSerializer
         Header.ClassName = RootObject->GetClass()->GetName();
         Header.ClassId = GetAssetClassIdFromClassName(Header.ClassName);
         Header.AssetName = MakeAssetName(FilePath, RootObject);
-        Header.AssetGuid = MakeAssetGuidString();
+        Header.AssetGuid = ReusedGuid.empty() ? MakeAssetGuidString() : ReusedGuid;
         Header.DependencyCount = 0;
         Header.BodyOffset = 0; // 현재 Archive는 seek/tell이 없으므로 header 직후 body 규약으로 사용한다.
 

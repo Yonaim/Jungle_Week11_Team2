@@ -4,6 +4,7 @@
 #include "Engine/Asset/AssetFileSerializer.h"
 #include "Object/ObjectFactory.h"
 #include "Engine/Serialization/Archive.h"
+#include "Engine/Platform/Paths.h"
 #include "Mesh/SkeletalMeshCommon.h"
 #include <algorithm>
 #include <chrono>
@@ -153,6 +154,10 @@ void USkeletonPoseAsset::Serialize(FArchive &Ar)
 {
     UAssetData::Serialize(Ar);
 
+    if (Ar.IsSaving())
+    {
+        TargetSkeletonPath = FPaths::NormalizePath(TargetSkeletonPath);
+    }
     Ar << TargetSkeletonPath;
     Ar << Space;
 

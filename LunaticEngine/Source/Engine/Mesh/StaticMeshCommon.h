@@ -6,6 +6,7 @@
 #include "Render/Resource/Buffer.h"
 #include "Serialization/Archive.h"
 #include "Engine/Object/FName.h"
+#include "Engine/Platform/Paths.h"
 #include "Materials/Material.h"
 #include "Materials/MaterialManager.h"
 #include <memory>
@@ -50,7 +51,7 @@ struct FStaticMaterial
 		FString JsonPath;
 		if (Ar.IsSaving() && Mat.MaterialInterface)
 		{
-			JsonPath = Mat.MaterialInterface->GetAssetPathFileName();
+			JsonPath = FPaths::NormalizePath(Mat.MaterialInterface->GetAssetPathFileName());
 		}
 		Ar << JsonPath;
 
@@ -110,6 +111,10 @@ struct FStaticMesh
 
 	void Serialize(FArchive& Ar)
 	{
+		if (Ar.IsSaving())
+		{
+			PathFileName = FPaths::NormalizePath(PathFileName);
+		}
 		Ar << PathFileName;
 		Ar << Vertices;
 		Ar << Indices;

@@ -1190,8 +1190,22 @@ void UTexture2D::QueueTextureRefresh(const FString& TexturePath)
 	PendingTextureRefreshPaths.insert(NormalizeTexturePath(TexturePath));
 }
 
+void UTexture2D::SetSourcePathForAsset(const FString& InSourcePath)
+{
+	SourceFilePath = NormalizeTexturePath(InSourcePath);
+}
+
+void UTexture2D::SetAssetPathForAsset(const FString& InAssetPath)
+{
+	AssetFilePath = NormalizeTexturePath(InAssetPath);
+}
+
 void UTexture2D::Serialize(FArchive& Ar)
 {
+	if (Ar.IsSaving())
+	{
+		SourceFilePath = NormalizeTexturePath(SourceFilePath);
+	}
 	Ar << SourceFilePath;
 	Ar << Width;
 	Ar << Height;

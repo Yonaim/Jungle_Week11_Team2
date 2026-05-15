@@ -90,6 +90,19 @@ UNineSlicePanelComponent::UNineSlicePanelComponent()
 void UNineSlicePanelComponent::Serialize(FArchive& Ar)
 {
 	UUIImageComponent::Serialize(Ar);
+	if (Ar.IsSaving())
+	{
+		StyleJsonPath = FPaths::NormalizePath(StyleJsonPath);
+		TopLeftTextureSlot.Path = FPaths::NormalizePath(TopLeftTextureSlot.Path);
+		TopTextureSlot.Path = FPaths::NormalizePath(TopTextureSlot.Path);
+		TopRightTextureSlot.Path = FPaths::NormalizePath(TopRightTextureSlot.Path);
+		LeftTextureSlot.Path = FPaths::NormalizePath(LeftTextureSlot.Path);
+		CenterTextureSlot.Path = FPaths::NormalizePath(CenterTextureSlot.Path);
+		RightTextureSlot.Path = FPaths::NormalizePath(RightTextureSlot.Path);
+		BottomLeftTextureSlot.Path = FPaths::NormalizePath(BottomLeftTextureSlot.Path);
+		BottomTextureSlot.Path = FPaths::NormalizePath(BottomTextureSlot.Path);
+		BottomRightTextureSlot.Path = FPaths::NormalizePath(BottomRightTextureSlot.Path);
+	}
 	Ar << StyleJsonPath;
 	Ar << AtlasRegion;
 	Ar << Slice;

@@ -159,7 +159,7 @@ public:
 
 	const FString& GetAssetPathFileName() const { return PathFileName; }
 	const FString& GetShaderPath() const { return ShaderPath; }
-	void SetAssetPathFileName(const FString& InPath) { PathFileName = InPath; }
+	void SetAssetPathFileName(const FString& InPath);
 	void Serialize(FArchive& Ar);//>>>>>Manager가 위임
 
 	FConstantBuffer* GetGPUBufferBySlot(uint32 InSlot) const

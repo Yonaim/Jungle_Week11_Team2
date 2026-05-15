@@ -47,8 +47,8 @@ public:
 	ID3D11ShaderResourceView* GetSRV() const { return SRV; }
 	const FString& GetSourcePath() const { return AssetFilePath.empty() ? SourceFilePath : AssetFilePath; }
 	const FString& GetReimportSourcePath() const { return SourceFilePath; }
-	void SetSourcePathForAsset(const FString& InSourcePath) { SourceFilePath = InSourcePath; }
-	void SetAssetPathForAsset(const FString& InAssetPath) { AssetFilePath = InAssetPath; }
+	void SetSourcePathForAsset(const FString& InSourcePath);
+	void SetAssetPathForAsset(const FString& InAssetPath);
 	void Serialize(FArchive& Ar);
 	uint32 GetWidth() const { return Width; }
 	uint32 GetHeight() const { return Height; }

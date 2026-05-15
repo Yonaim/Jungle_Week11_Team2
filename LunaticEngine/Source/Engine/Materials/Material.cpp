@@ -6,6 +6,7 @@
 #include "Render/Shader/Shader.h"
 #include "Texture/Texture2D.h"
 #include "Engine/Runtime/Engine.h"
+#include "Engine/Platform/Paths.h"
 #include "Render/Pipeline/Renderer.h"
 #include "Render/Types/MaterialTextureSlot.h"
 
@@ -121,7 +122,7 @@ void UMaterial::Create(const FString& InPathFileName, FMaterialTemplate* InTempl
 	PerShaderOverride = {};
 	TransientShader = nullptr;
 
-	PathFileName = InPathFileName;
+	PathFileName = FPaths::NormalizePath(InPathFileName);
 	Template = InTemplate;
 	ShaderPath = InShaderPath.empty() && InTemplate ? InTemplate->GetShaderPath() : InShaderPath;
 	RenderPass = InRenderPass;
@@ -306,8 +307,18 @@ void UMaterial::RebuildCachedSRVs()
 	}
 }
 
+void UMaterial::SetAssetPathFileName(const FString& InPath)
+{
+	PathFileName = FPaths::NormalizePath(InPath);
+}
+
 void UMaterial::Serialize(FArchive& Ar)
 {
+	if (Ar.IsSaving())
+	{
+		PathFileName = FPaths::NormalizePath(PathFileName);
+		ShaderPath = FPaths::NormalizePath(ShaderPath);
+	}
 	Ar << PathFileName;
 	Ar << ShaderPath;
 	Ar << RenderPass;
@@ -384,7 +395,7 @@ void UMaterial::Serialize(FArchive& Ar)
 		for (auto& Pair : TextureParameters)
 		{
 			FString SlotName = Pair.first;
-			FString TexturePath = Pair.second ? Pair.second->GetSourcePath() : FString();
+			FString TexturePath = Pair.second ? FPaths::NormalizePath(Pair.second->GetSourcePath()) : FString();
 
 			Ar << SlotName;
 			Ar << TexturePath;

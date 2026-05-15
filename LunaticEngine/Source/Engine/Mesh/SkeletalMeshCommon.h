@@ -118,6 +118,10 @@ struct FSkeletalMesh
 
 	void Serialize(FArchive& Ar)
 	{
+		if (Ar.IsSaving())
+		{
+			PathFileName = FPaths::NormalizePath(PathFileName);
+		}
 		Ar << PathFileName;
 		Ar << Vertices;
 		Ar << Indices;

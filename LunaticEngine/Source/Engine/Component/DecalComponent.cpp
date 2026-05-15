@@ -14,6 +14,7 @@
 #include "Engine/Runtime/Engine.h"
 #include "Texture/Texture2D.h"
 #include "Materials/Material.h"
+#include "Engine/Platform/Paths.h"
 #include <algorithm>
 
 IMPLEMENT_CLASS(UDecalComponent, UPrimitiveComponent)
@@ -74,6 +75,10 @@ void UDecalComponent::PostEditProperty(const char* PropertyName)
 void UDecalComponent::Serialize(FArchive& Ar)
 {
 	UPrimitiveComponent::Serialize(Ar);
+	if (Ar.IsSaving())
+	{
+		MaterialSlot.Path = FPaths::NormalizePath(MaterialSlot.Path);
+	}
 	Ar << MaterialSlot.Path;
 	Ar << Color;
 	Ar << FadeInDelay;

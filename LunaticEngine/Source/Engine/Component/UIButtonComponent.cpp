@@ -11,6 +11,7 @@
 #include "Resource/ResourceManager.h"
 #include "Serialization/Archive.h"
 #include "Texture/Texture2D.h"
+#include "Engine/Platform/Paths.h"
 #include "Viewport/GameViewportClient.h"
 
 #include <algorithm>
@@ -125,6 +126,10 @@ UIButtonComponent::UIButtonComponent()
 void UIButtonComponent::Serialize(FArchive& Ar)
 {
 	UUIImageComponent::Serialize(Ar);
+	if (Ar.IsSaving())
+	{
+		BackgroundTextureSlot.Path = FPaths::NormalizePath(BackgroundTextureSlot.Path);
+	}
 	Ar << Label;
 	Ar << FontName;
 	Ar << LabelColor;

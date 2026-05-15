@@ -15,6 +15,7 @@
 #include "Render/Proxy/PrimitiveSceneProxy.h"
 #include "Serialization/Archive.h"
 #include "GameFramework/AActor.h"
+#include "Engine/Platform/Paths.h"
 
 IMPLEMENT_CLASS(UStaticMeshComponent, UMeshComponent)
 
@@ -313,6 +314,10 @@ bool UStaticMeshComponent::LineTraceStaticMeshFast(
 // FArchive 기반 직렬화 — 복제 왕복용. 자산은 경로로만 들고, 실제 로드는 PostDuplicate에서.
 static FArchive& operator<<(FArchive& Ar, FMaterialSlot& Slot)
 {
+	if (Ar.IsSaving())
+	{
+		Slot.Path = FPaths::NormalizePath(Slot.Path);
+	}
 	Ar << Slot.Path;
 	return Ar;
 }
@@ -320,6 +325,10 @@ static FArchive& operator<<(FArchive& Ar, FMaterialSlot& Slot)
 void UStaticMeshComponent::Serialize(FArchive& Ar)
 {
 	UMeshComponent::Serialize(Ar);
+	if (Ar.IsSaving())
+	{
+		StaticMeshPath = FPaths::NormalizePath(StaticMeshPath);
+	}
 	Ar << StaticMeshPath;
 	Ar << MaterialSlots;
 }

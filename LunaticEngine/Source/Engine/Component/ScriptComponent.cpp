@@ -218,6 +218,10 @@ void UScriptComponent::Serialize(FArchive &Ar)
     Super::Serialize(Ar);
 
     // ScriptPath는 component 상태의 일부이므로 저장/로드 시 그대로 직렬화한다.
+    if (Ar.IsSaving())
+    {
+        ScriptPath = FScriptPaths::NormalizeScriptPath(ScriptPath);
+    }
     Ar << ScriptPath;
 
     if (Ar.IsLoading())

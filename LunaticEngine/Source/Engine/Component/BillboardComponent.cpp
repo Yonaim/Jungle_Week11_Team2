@@ -130,6 +130,10 @@ void UBillboardComponent::Serialize(FArchive& Ar)
 {
 	UPrimitiveComponent::Serialize(Ar);
 	Ar << bIsBillboard;
+	if (Ar.IsSaving())
+	{
+		TextureSlot.Path = FPaths::NormalizePath(TextureSlot.Path);
+	}
 	Ar << TextureSlot.Path;
 	Ar << Width;
 	Ar << Height;
